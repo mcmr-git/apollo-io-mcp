@@ -7,14 +7,14 @@ import { z } from "zod";
 import http from "node:http";
 import { ApolloClient } from "./apollo-client.js";
 
-// People tools
+// People tools (search & enrich only)
 import {
   searchPeopleDef, searchPeople,
   enrichPersonDef, enrichPerson,
   bulkEnrichPeopleDef, bulkEnrichPeople,
 } from "./tools/people.js";
 
-// Organization tools
+// Organization tools (search & enrich only)
 import {
   searchOrganizationsDef, searchOrganizations,
   enrichOrganizationDef, enrichOrganization,
@@ -22,101 +22,23 @@ import {
   getOrganizationJobPostingsDef, getOrganizationJobPostings,
 } from "./tools/organizations.js";
 
-// Contact tools
+// Contact tools (read-only)
 import {
-  createContactDef, createContact,
-  updateContactDef, updateContact,
   getContactDef, getContact,
   searchContactsDef, searchContacts,
-  deleteContactDef, deleteContact,
-  bulkCreateContactsDef, bulkCreateContacts,
-  bulkUpdateContactsDef, bulkUpdateContacts,
 } from "./tools/contacts.js";
 
-// Account tools
+// Account tools (read-only)
 import {
-  createAccountDef, createAccount,
-  updateAccountDef, updateAccount,
   searchAccountsDef, searchAccounts,
 } from "./tools/accounts.js";
 
-// Sequence tools
-import {
-  searchSequencesDef, searchSequences,
-  addContactsToSequenceDef, addContactsToSequence,
-  updateSequenceStatusDef, updateSequenceStatus,
-} from "./tools/sequences.js";
-
-// Email tools
-import {
-  searchOutreachEmailsDef, searchOutreachEmails,
-  getEmailActivitiesDef, getEmailActivities,
-  listEmailAccountsDef, listEmailAccounts,
-} from "./tools/emails.js";
-
-// Field tools
-import {
-  listFieldsDef, listFields,
-  createCustomFieldDef, createCustomField,
-  listCustomFieldsDeprecatedDef, listCustomFieldsDeprecated,
-} from "./tools/fields.js";
-
-// Usage tools
+// Usage tools (read-only)
 import {
   searchNewsArticlesDef, searchNewsArticles,
-  getApiUsageStatsDef, getApiUsageStats,
 } from "./tools/usage.js";
 
-// Label tools (undocumented)
-import {
-  listLabelsDef, listLabels,
-  createLabelDef, createLabel,
-  updateLabelDef, updateLabel,
-  deleteLabelDef, deleteLabel,
-} from "./tools/labels.js";
-
-// Stage tools (undocumented)
-import {
-  listContactStagesDef, listContactStages,
-  listAccountStagesDef, listAccountStages,
-  listOpportunityStagesDef, listOpportunityStages,
-} from "./tools/stages.js";
-
-// Opportunity tools (undocumented)
-import {
-  searchOpportunitiesDef, searchOpportunities,
-  getOpportunityDef, getOpportunity,
-  createOpportunityDef, createOpportunity,
-  updateOpportunityDef, updateOpportunity,
-} from "./tools/opportunities.js";
-
-// Task tools (undocumented)
-import {
-  searchTasksDef, searchTasks,
-  getTaskDef, getTask,
-  createTaskDef, createTask,
-  updateTaskDef, updateTask,
-} from "./tools/tasks.js";
-
-// Note tools (undocumented)
-import {
-  searchNotesDef, searchNotes,
-  createNoteDef, createNote,
-  deleteNoteDef, deleteNote,
-} from "./tools/notes.js";
-
-// User tools (undocumented)
-import {
-  searchUsersDef, searchUsers,
-} from "./tools/users.js";
-
-// Activity tools (undocumented)
-import {
-  searchActivitiesDef, searchActivities,
-  searchPhoneCallsDef, searchPhoneCalls,
-} from "./tools/activities.js";
-
-// Health check (undocumented)
+// Health check
 import {
   healthCheckDef, healthCheck,
 } from "./tools/health.js";
@@ -153,9 +75,9 @@ async function handleToolCall(
   }
 }
 
-// =====================
-// Register all 45 tools
-// =====================
+// ======================================
+// Register research-only tools (12 total)
+// ======================================
 
 // --- People (3) ---
 server.tool(
@@ -208,21 +130,7 @@ server.tool(
   async (params) => handleToolCall(() => getOrganizationJobPostings(apollo, getOrganizationJobPostingsDef.inputSchema.parse(params)))
 );
 
-// --- Contacts (7) ---
-server.tool(
-  createContactDef.name,
-  createContactDef.description,
-  createContactDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createContact(apollo, createContactDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateContactDef.name,
-  updateContactDef.description,
-  updateContactDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateContact(apollo, updateContactDef.inputSchema.parse(params)))
-);
-
+// --- Contacts (2, read-only) ---
 server.tool(
   getContactDef.name,
   getContactDef.description,
@@ -237,42 +145,7 @@ server.tool(
   async (params) => handleToolCall(() => searchContacts(apollo, searchContactsDef.inputSchema.parse(params)))
 );
 
-server.tool(
-  deleteContactDef.name,
-  deleteContactDef.description,
-  deleteContactDef.inputSchema.shape,
-  async (params) => handleToolCall(() => deleteContact(apollo, deleteContactDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  bulkCreateContactsDef.name,
-  bulkCreateContactsDef.description,
-  bulkCreateContactsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => bulkCreateContacts(apollo, bulkCreateContactsDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  bulkUpdateContactsDef.name,
-  bulkUpdateContactsDef.description,
-  bulkUpdateContactsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => bulkUpdateContacts(apollo, bulkUpdateContactsDef.inputSchema.parse(params)))
-);
-
-// --- Accounts (3) ---
-server.tool(
-  createAccountDef.name,
-  createAccountDef.description,
-  createAccountDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createAccount(apollo, createAccountDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateAccountDef.name,
-  updateAccountDef.description,
-  updateAccountDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateAccount(apollo, updateAccountDef.inputSchema.parse(params)))
-);
-
+// --- Accounts (1, read-only) ---
 server.tool(
   searchAccountsDef.name,
   searchAccountsDef.description,
@@ -280,73 +153,7 @@ server.tool(
   async (params) => handleToolCall(() => searchAccounts(apollo, searchAccountsDef.inputSchema.parse(params)))
 );
 
-// --- Sequences (3) ---
-server.tool(
-  searchSequencesDef.name,
-  searchSequencesDef.description,
-  searchSequencesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchSequences(apollo, searchSequencesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  addContactsToSequenceDef.name,
-  addContactsToSequenceDef.description,
-  addContactsToSequenceDef.inputSchema.shape,
-  async (params) => handleToolCall(() => addContactsToSequence(apollo, addContactsToSequenceDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateSequenceStatusDef.name,
-  updateSequenceStatusDef.description,
-  updateSequenceStatusDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateSequenceStatus(apollo, updateSequenceStatusDef.inputSchema.parse(params)))
-);
-
-// --- Emails (3) ---
-server.tool(
-  searchOutreachEmailsDef.name,
-  searchOutreachEmailsDef.description,
-  searchOutreachEmailsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchOutreachEmails(apollo, searchOutreachEmailsDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  getEmailActivitiesDef.name,
-  getEmailActivitiesDef.description,
-  getEmailActivitiesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getEmailActivities(apollo, getEmailActivitiesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  listEmailAccountsDef.name,
-  listEmailAccountsDef.description,
-  listEmailAccountsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listEmailAccounts(apollo, listEmailAccountsDef.inputSchema.parse(params)))
-);
-
-// --- Fields (3) ---
-server.tool(
-  listFieldsDef.name,
-  listFieldsDef.description,
-  listFieldsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listFields(apollo, listFieldsDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  createCustomFieldDef.name,
-  createCustomFieldDef.description,
-  createCustomFieldDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createCustomField(apollo, createCustomFieldDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  listCustomFieldsDeprecatedDef.name,
-  listCustomFieldsDeprecatedDef.description,
-  listCustomFieldsDeprecatedDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listCustomFieldsDeprecated(apollo, listCustomFieldsDeprecatedDef.inputSchema.parse(params)))
-);
-
-// --- Usage (2) ---
+// --- News (1) ---
 server.tool(
   searchNewsArticlesDef.name,
   searchNewsArticlesDef.description,
@@ -354,168 +161,7 @@ server.tool(
   async (params) => handleToolCall(() => searchNewsArticles(apollo, searchNewsArticlesDef.inputSchema.parse(params)))
 );
 
-server.tool(
-  getApiUsageStatsDef.name,
-  getApiUsageStatsDef.description,
-  getApiUsageStatsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getApiUsageStats(apollo, getApiUsageStatsDef.inputSchema.parse(params)))
-);
-
-// --- Labels (4, undocumented) ---
-server.tool(
-  listLabelsDef.name,
-  listLabelsDef.description,
-  listLabelsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listLabels(apollo, listLabelsDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  createLabelDef.name,
-  createLabelDef.description,
-  createLabelDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createLabel(apollo, createLabelDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateLabelDef.name,
-  updateLabelDef.description,
-  updateLabelDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateLabel(apollo, updateLabelDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  deleteLabelDef.name,
-  deleteLabelDef.description,
-  deleteLabelDef.inputSchema.shape,
-  async (params) => handleToolCall(() => deleteLabel(apollo, deleteLabelDef.inputSchema.parse(params)))
-);
-
-// --- Stages (3, undocumented) ---
-server.tool(
-  listContactStagesDef.name,
-  listContactStagesDef.description,
-  listContactStagesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listContactStages(apollo, listContactStagesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  listAccountStagesDef.name,
-  listAccountStagesDef.description,
-  listAccountStagesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listAccountStages(apollo, listAccountStagesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  listOpportunityStagesDef.name,
-  listOpportunityStagesDef.description,
-  listOpportunityStagesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => listOpportunityStages(apollo, listOpportunityStagesDef.inputSchema.parse(params)))
-);
-
-// --- Opportunities (4, undocumented) ---
-server.tool(
-  searchOpportunitiesDef.name,
-  searchOpportunitiesDef.description,
-  searchOpportunitiesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchOpportunities(apollo, searchOpportunitiesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  getOpportunityDef.name,
-  getOpportunityDef.description,
-  getOpportunityDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getOpportunity(apollo, getOpportunityDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  createOpportunityDef.name,
-  createOpportunityDef.description,
-  createOpportunityDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createOpportunity(apollo, createOpportunityDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateOpportunityDef.name,
-  updateOpportunityDef.description,
-  updateOpportunityDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateOpportunity(apollo, updateOpportunityDef.inputSchema.parse(params)))
-);
-
-// --- Tasks (4, undocumented) ---
-server.tool(
-  searchTasksDef.name,
-  searchTasksDef.description,
-  searchTasksDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchTasks(apollo, searchTasksDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  getTaskDef.name,
-  getTaskDef.description,
-  getTaskDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getTask(apollo, getTaskDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  createTaskDef.name,
-  createTaskDef.description,
-  createTaskDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createTask(apollo, createTaskDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  updateTaskDef.name,
-  updateTaskDef.description,
-  updateTaskDef.inputSchema.shape,
-  async (params) => handleToolCall(() => updateTask(apollo, updateTaskDef.inputSchema.parse(params)))
-);
-
-// --- Notes (3, undocumented) ---
-server.tool(
-  searchNotesDef.name,
-  searchNotesDef.description,
-  searchNotesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchNotes(apollo, searchNotesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  createNoteDef.name,
-  createNoteDef.description,
-  createNoteDef.inputSchema.shape,
-  async (params) => handleToolCall(() => createNote(apollo, createNoteDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  deleteNoteDef.name,
-  deleteNoteDef.description,
-  deleteNoteDef.inputSchema.shape,
-  async (params) => handleToolCall(() => deleteNote(apollo, deleteNoteDef.inputSchema.parse(params)))
-);
-
-// --- Users (1, undocumented) ---
-server.tool(
-  searchUsersDef.name,
-  searchUsersDef.description,
-  searchUsersDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchUsers(apollo, searchUsersDef.inputSchema.parse(params)))
-);
-
-// --- Activities (2, undocumented) ---
-server.tool(
-  searchActivitiesDef.name,
-  searchActivitiesDef.description,
-  searchActivitiesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchActivities(apollo, searchActivitiesDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  searchPhoneCallsDef.name,
-  searchPhoneCallsDef.description,
-  searchPhoneCallsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchPhoneCalls(apollo, searchPhoneCallsDef.inputSchema.parse(params)))
-);
-
-// --- Health (1, undocumented) ---
+// --- Health (1) ---
 server.tool(
   healthCheckDef.name,
   healthCheckDef.description,
