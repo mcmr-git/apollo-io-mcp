@@ -175,24 +175,28 @@ async function main() {
 
   if (port) {
     // SSE transport for cloud deployment (Railway / Poke)
-    let sseTransport: SSEServerTransport | null = null;
+    const sessions = new Map<string, SSEServerTransport>();
 
     const httpServer = http.createServer(async (req, res) => {
       const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
       if (url.pathname === "/sse" && req.method === "GET") {
-        sseTransport = new SSEServerTransport("/messages", res);
-        await server.connect(sseTransport);
+        const transport = new SSEServerTransport("/messages", res);
+        sessions.set(transport.sessionId, transport);
+        transport.onclose = () => sessions.delete(transport.sessionId);
+        await server.connect(transport);
       } else if (url.pathname === "/messages" && req.method === "POST") {
-        if (sseTransport) {
-          await sseTransport.handlePostMessage(req, res);
+        const sessionId = url.searchParams.get("sessionId");
+        const transport = sessionId ? sessions.get(sessionId) : null;
+        if (transport) {
+          await transport.handlePostMessage(req, res);
         } else {
-          res.writeHead(400);
-          res.end("No active SSE connection");
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid or expired session" }));
         }
       } else if (url.pathname === "/health") {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ status: "ok" }));
+        res.end(JSON.stringify({ status: "ok", sessions: sessions.size }));
       } else {
         res.writeHead(404);
         res.end("Not found");
