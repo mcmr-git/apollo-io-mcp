@@ -52,144 +52,87 @@ if (!apiKey) {
 
 const apollo = new ApolloClient(apiKey);
 
-const server = new McpServer({
-  name: "apollo-io",
-  version: "1.0.0",
-});
+function createServer() {
+  const server = new McpServer({
+    name: "apollo-io",
+    version: "1.0.0",
+  });
 
-// Helper to wrap handler results into MCP text content
-async function handleToolCall(
-  handler: () => Promise<Record<string, unknown>>
-) {
-  try {
-    const result = await handler();
-    return {
-      content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      content: [{ type: "text" as const, text: JSON.stringify({ error: true, message }, null, 2) }],
-      isError: true as const,
-    };
+  function handleToolCall(handler: () => Promise<Record<string, unknown>>) {
+    return handler().then(
+      (result) => ({
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      }),
+      (err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: true, message }, null, 2) }],
+          isError: true as const,
+        };
+      }
+    );
   }
+
+  // --- People (3) ---
+  server.tool(searchPeopleDef.name, searchPeopleDef.description, searchPeopleDef.inputSchema.shape,
+    async (params) => handleToolCall(() => searchPeople(apollo, searchPeopleDef.inputSchema.parse(params))));
+  server.tool(enrichPersonDef.name, enrichPersonDef.description, enrichPersonDef.inputSchema.shape,
+    async (params) => handleToolCall(() => enrichPerson(apollo, enrichPersonDef.inputSchema.parse(params))));
+  server.tool(bulkEnrichPeopleDef.name, bulkEnrichPeopleDef.description, bulkEnrichPeopleDef.inputSchema.shape,
+    async (params) => handleToolCall(() => bulkEnrichPeople(apollo, bulkEnrichPeopleDef.inputSchema.parse(params))));
+
+  // --- Organizations (4) ---
+  server.tool(searchOrganizationsDef.name, searchOrganizationsDef.description, searchOrganizationsDef.inputSchema.shape,
+    async (params) => handleToolCall(() => searchOrganizations(apollo, searchOrganizationsDef.inputSchema.parse(params))));
+  server.tool(enrichOrganizationDef.name, enrichOrganizationDef.description, enrichOrganizationDef.inputSchema.shape,
+    async (params) => handleToolCall(() => enrichOrganization(apollo, enrichOrganizationDef.inputSchema.parse(params))));
+  server.tool(getOrganizationDef.name, getOrganizationDef.description, getOrganizationDef.inputSchema.shape,
+    async (params) => handleToolCall(() => getOrganization(apollo, getOrganizationDef.inputSchema.parse(params))));
+  server.tool(getOrganizationJobPostingsDef.name, getOrganizationJobPostingsDef.description, getOrganizationJobPostingsDef.inputSchema.shape,
+    async (params) => handleToolCall(() => getOrganizationJobPostings(apollo, getOrganizationJobPostingsDef.inputSchema.parse(params))));
+
+  // --- Contacts (2, read-only) ---
+  server.tool(getContactDef.name, getContactDef.description, getContactDef.inputSchema.shape,
+    async (params) => handleToolCall(() => getContact(apollo, getContactDef.inputSchema.parse(params))));
+  server.tool(searchContactsDef.name, searchContactsDef.description, searchContactsDef.inputSchema.shape,
+    async (params) => handleToolCall(() => searchContacts(apollo, searchContactsDef.inputSchema.parse(params))));
+
+  // --- Accounts (1, read-only) ---
+  server.tool(searchAccountsDef.name, searchAccountsDef.description, searchAccountsDef.inputSchema.shape,
+    async (params) => handleToolCall(() => searchAccounts(apollo, searchAccountsDef.inputSchema.parse(params))));
+
+  // --- News (1) ---
+  server.tool(searchNewsArticlesDef.name, searchNewsArticlesDef.description, searchNewsArticlesDef.inputSchema.shape,
+    async (params) => handleToolCall(() => searchNewsArticles(apollo, searchNewsArticlesDef.inputSchema.parse(params))));
+
+  // --- Health (1) ---
+  server.tool(healthCheckDef.name, healthCheckDef.description, healthCheckDef.inputSchema.shape,
+    async (params) => handleToolCall(() => healthCheck(apollo, healthCheckDef.inputSchema.parse(params))));
+
+  return server;
 }
-
-// ======================================
-// Register research-only tools (12 total)
-// ======================================
-
-// --- People (3) ---
-server.tool(
-  searchPeopleDef.name,
-  searchPeopleDef.description,
-  searchPeopleDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchPeople(apollo, searchPeopleDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  enrichPersonDef.name,
-  enrichPersonDef.description,
-  enrichPersonDef.inputSchema.shape,
-  async (params) => handleToolCall(() => enrichPerson(apollo, enrichPersonDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  bulkEnrichPeopleDef.name,
-  bulkEnrichPeopleDef.description,
-  bulkEnrichPeopleDef.inputSchema.shape,
-  async (params) => handleToolCall(() => bulkEnrichPeople(apollo, bulkEnrichPeopleDef.inputSchema.parse(params)))
-);
-
-// --- Organizations (4) ---
-server.tool(
-  searchOrganizationsDef.name,
-  searchOrganizationsDef.description,
-  searchOrganizationsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchOrganizations(apollo, searchOrganizationsDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  enrichOrganizationDef.name,
-  enrichOrganizationDef.description,
-  enrichOrganizationDef.inputSchema.shape,
-  async (params) => handleToolCall(() => enrichOrganization(apollo, enrichOrganizationDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  getOrganizationDef.name,
-  getOrganizationDef.description,
-  getOrganizationDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getOrganization(apollo, getOrganizationDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  getOrganizationJobPostingsDef.name,
-  getOrganizationJobPostingsDef.description,
-  getOrganizationJobPostingsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getOrganizationJobPostings(apollo, getOrganizationJobPostingsDef.inputSchema.parse(params)))
-);
-
-// --- Contacts (2, read-only) ---
-server.tool(
-  getContactDef.name,
-  getContactDef.description,
-  getContactDef.inputSchema.shape,
-  async (params) => handleToolCall(() => getContact(apollo, getContactDef.inputSchema.parse(params)))
-);
-
-server.tool(
-  searchContactsDef.name,
-  searchContactsDef.description,
-  searchContactsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchContacts(apollo, searchContactsDef.inputSchema.parse(params)))
-);
-
-// --- Accounts (1, read-only) ---
-server.tool(
-  searchAccountsDef.name,
-  searchAccountsDef.description,
-  searchAccountsDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchAccounts(apollo, searchAccountsDef.inputSchema.parse(params)))
-);
-
-// --- News (1) ---
-server.tool(
-  searchNewsArticlesDef.name,
-  searchNewsArticlesDef.description,
-  searchNewsArticlesDef.inputSchema.shape,
-  async (params) => handleToolCall(() => searchNewsArticles(apollo, searchNewsArticlesDef.inputSchema.parse(params)))
-);
-
-// --- Health (1) ---
-server.tool(
-  healthCheckDef.name,
-  healthCheckDef.description,
-  healthCheckDef.inputSchema.shape,
-  async (params) => handleToolCall(() => healthCheck(apollo, healthCheckDef.inputSchema.parse(params)))
-);
 
 // --- Start ---
 async function main() {
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
 
   if (port) {
-    // SSE transport for cloud deployment (Railway / Poke)
-    const sessions = new Map<string, SSEServerTransport>();
+    const sessions = new Map<string, { server: McpServer; transport: SSEServerTransport }>();
 
     const httpServer = http.createServer(async (req, res) => {
       const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
       if (url.pathname === "/sse" && req.method === "GET") {
+        const mcpServer = createServer();
         const transport = new SSEServerTransport("/messages", res);
-        sessions.set(transport.sessionId, transport);
+        sessions.set(transport.sessionId, { server: mcpServer, transport });
         transport.onclose = () => sessions.delete(transport.sessionId);
-        await server.connect(transport);
+        await mcpServer.connect(transport);
       } else if (url.pathname === "/messages" && req.method === "POST") {
         const sessionId = url.searchParams.get("sessionId");
-        const transport = sessionId ? sessions.get(sessionId) : null;
-        if (transport) {
-          await transport.handlePostMessage(req, res);
+        const session = sessionId ? sessions.get(sessionId) : null;
+        if (session) {
+          await session.transport.handlePostMessage(req, res);
         } else {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid or expired session" }));
@@ -208,7 +151,7 @@ async function main() {
       console.log(`SSE endpoint: http://0.0.0.0:${port}/sse`);
     });
   } else {
-    // stdio transport for local usage
+    const server = createServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
   }
