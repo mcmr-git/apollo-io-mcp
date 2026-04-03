@@ -2,7 +2,9 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
+import http from "node:http";
 import { ApolloClient } from "./apollo-client.js";
 
 // People tools
@@ -128,7 +130,6 @@ if (!apiKey) {
 
 const apollo = new ApolloClient(apiKey);
 
-// --- MCP Server ---
 const server = new McpServer({
   name: "apollo-io",
   version: "1.0.0",
@@ -524,8 +525,43 @@ server.tool(
 
 // --- Start ---
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
+
+  if (port) {
+    // SSE transport for cloud deployment (Railway / Poke)
+    let sseTransport: SSEServerTransport | null = null;
+
+    const httpServer = http.createServer(async (req, res) => {
+      const url = new URL(req.url || "/", `http://${req.headers.host}`);
+
+      if (url.pathname === "/sse" && req.method === "GET") {
+        sseTransport = new SSEServerTransport("/messages", res);
+        await server.connect(sseTransport);
+      } else if (url.pathname === "/messages" && req.method === "POST") {
+        if (sseTransport) {
+          await sseTransport.handlePostMessage(req, res);
+        } else {
+          res.writeHead(400);
+          res.end("No active SSE connection");
+        }
+      } else if (url.pathname === "/health") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok" }));
+      } else {
+        res.writeHead(404);
+        res.end("Not found");
+      }
+    });
+
+    httpServer.listen(port, "0.0.0.0", () => {
+      console.log(`Apollo MCP SSE server listening on port ${port}`);
+      console.log(`SSE endpoint: http://0.0.0.0:${port}/sse`);
+    });
+  } else {
+    // stdio transport for local usage
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  }
 }
 
 main().catch((err) => {
